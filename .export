@@ -1,0 +1,54 @@
+export APP=delever_customer_api_gateway
+
+export POSTGRES_HOST=localhost
+export POSTGRES_DB=deleverdb
+export POSTGRES_USER=delever
+export POSTGRES_PASSWORD=delever
+export POSTGRES_PORT=5432
+
+export REDIS_HOST=localhost
+export REDIS_PORT=6379
+export HTTP_PORT=:1235
+export NETWORK_NAME=host
+
+export POSTGRES_HOST=localhost
+export POSTGRES_DB=deleverdb
+export POSTGRES_USER=delever
+export POSTGRES_PASSWORD=delever
+export POSTGRES_PORT=5432
+
+export GEO_SERVICE_HOST=localhost
+export GEO_SERVICE_PORT=8000
+
+export USER_SERVICE_HOST=localhost
+export USER_SERVICE_PORT=8003
+
+export COURIER_SERVICE_HOST=localhost
+export COURIER_SERVICE_PORT=9001
+
+export FARE_SERVICE_HOST=localhost
+export FARE_SERVICE_PORT=8004
+
+export ORDER_SERVICE_HOST=localhost
+export ORDER_SERVICE_PORT=8002
+
+export SMS_SERVICE_HOST=localhost
+export SMS_SERVICE_PORT=8005
+
+export CATALOG_SERVICE_HOST=localhost
+export CATALOG_SERVICE_PORT=8007
+
+export AUTH_SERVICE_HOST=localhost
+export AUTH_SERVICE_PORT=7070
+
+export NOTIFICATION_SERVICE_HOST=localhost
+export NOTIFICATION_SERVICE_PORT=8008
+
+export REPORT_SERVICE_HOST=localhost
+export REPORT_SERVICE_PORT=9001
+
+export ALIFTECH_ACCESS_TOKEN=localhost
+export ALIFTECH_URL=localhost
+export ALIFTECH_SHIPPER_ID=localhost
+
+
