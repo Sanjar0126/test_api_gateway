@@ -1,10 +1,10 @@
 package main
 
 import (
-	"gitlab.udevs.io/delever/delever_customer_api_gateway/api"
-	"gitlab.udevs.io/delever/delever_customer_api_gateway/config"
-	"gitlab.udevs.io/delever/delever_customer_api_gateway/pkg/grpc_client"
-	"gitlab.udevs.io/delever/delever_customer_api_gateway/pkg/logger"
+	"github.com/Sanjar0126/test_api_gateway/api"
+	"github.com/Sanjar0126/test_api_gateway/config"
+	"github.com/Sanjar0126/test_api_gateway/pkg/grpc_client"
+	"github.com/Sanjar0126/test_api_gateway/pkg/logger"
 )
 
 var (

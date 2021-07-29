@@ -1,0 +1,12 @@
+syntax = "proto3";
+
+package genproto;
+option go_package="genproto/post_service";
+
+message Post {
+  string id = 1;
+  string title = 2;
+  string body = 3;
+  string created_at = 4;
+  string author = 5;
+}

@@ -1,17 +1,10 @@
 package v1
 
 import (
-	"context"
 	"errors"
 	"fmt"
 	"net/http"
 	"strconv"
-
-	pba "genproto/auth_service"
-	pbc "genproto/crm_service"
-	pbo "genproto/order_service"
-	pbp "genproto/payment_service"
-	pbu "genproto/user_service"
 
 	"github.com/gin-gonic/gin"
 	"github.com/golang/protobuf/jsonpb"
@@ -19,10 +12,10 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
-	"gitlab.udevs.io/delever/delever_customer_api_gateway/api/models"
-	"gitlab.udevs.io/delever/delever_customer_api_gateway/config"
-	"gitlab.udevs.io/delever/delever_customer_api_gateway/pkg/grpc_client"
-	"gitlab.udevs.io/delever/delever_customer_api_gateway/pkg/logger"
+	"github.com/Sanjar0126/test_api_gateway/api/models"
+	"github.com/Sanjar0126/test_api_gateway/config"
+	"github.com/Sanjar0126/test_api_gateway/pkg/grpc_client"
+	"github.com/Sanjar0126/test_api_gateway/pkg/logger"
 )
 
 type handlerV1 struct {
@@ -285,47 +278,6 @@ func handleBadRequestErrWithMessage(c *gin.Context, l logger.Logger, err error, 
 	return false
 }
 
-func getUserInfo(h *handlerV1, c *gin.Context, info *models.UserInfo) error {
-	var (
-		ErrUnauthorized = errors.New("Unauthorized")
-		accessToken     string
-	)
-
-	accessToken = c.GetHeader("Authorization")
-	if accessToken == "" {
-		c.JSON(http.StatusUnauthorized, models.ResponseError{
-			Error: ErrorCodeUnauthorized,
-		})
-		h.log.Error("Unauthorized request: ", logger.Error(ErrUnauthorized))
-		return errors.New("Unauthorized request")
-	}
-
-	resp, err := h.grpcClient.AuthService().CheckPermission(context.Background(), &pba.CheckPermissionRequest{
-		AccessToken: accessToken,
-		UserTypeId:  config.CustomerTypeID,
-	})
-	if err != nil {
-		c.JSON(http.StatusUnauthorized, models.ResponseError{
-			Error: ErrorCodeUnauthorized,
-		})
-		h.log.Error("Unauthorized request: ", logger.Error(err))
-		return errors.New("Unauthorized request")
-	}
-
-	if !resp.HasPermission {
-		c.JSON(http.StatusForbidden, models.ResponseError{
-			Error: ErrorCodeForbidden,
-		})
-		h.log.Error("Request Forbidden")
-		return errors.New("Request Forbidden")
-	}
-	info.ID = resp.UserId
-	info.UserID = resp.UserId
-	info.ShipperID = resp.ShipperId
-
-	return nil
-}
-
 func Contains(arr []interface{}, value interface{}) bool {
 	if len(arr) == 0 {
 		return false
@@ -341,117 +293,4 @@ func Contains(arr []interface{}, value interface{}) bool {
 		}
 	}
 	return false
-}
-
-func (h *handlerV1) SendSms(model models.SendSmsPaymentsModel, userInfo models.UserInfo) (link string, err error) {
-	var jspbMarshal jsonpb.Marshaler
-
-	jspbMarshal.OrigName = true
-	jspbMarshal.EmitDefaults = true
-
-	if model.PaymentType != "click" && model.PaymentType != "payme" {
-		return "", errors.New("wrong payment type")
-	}
-
-	shipper, err := h.grpcClient.ShipperService().Get(
-		context.Background(),
-		&pbu.ShipperId{
-			Id: userInfo.ShipperID,
-		})
-	if err != nil {
-		return "", err
-	}
-
-	order, err := h.grpcClient.OrderService().Get(
-		context.Background(), &pbo.GetRequest{
-			ShipperId: userInfo.ShipperID,
-			Id:        model.OrderID,
-		},
-	)
-	if err != nil {
-		return "", err
-	}
-
-	orderNum := strconv.Itoa(int(order.ExternalOrderId))
-
-	if shipper.Crm == "jowi" && order.JowiId.GetValue() != "" {
-
-		res, err := h.grpcClient.CRMService().GetJowiBill(
-			context.Background(),
-			&pbc.GetJowiBillRequest{
-				ShipperId:   userInfo.ShipperID,
-				OrderJowiId: order.JowiId.Value,
-			})
-		if err != nil {
-			h.log.Error("Error while getting jowi bill ID", logger.Error(err))
-			return "", err
-		}
-
-		if model.PaymentType == "payme" {
-			resPayme, err := h.grpcClient.PaymentService().GeneratePaymeLink(
-				context.Background(),
-				&pbp.GeneratePaymeLinkRequest{
-					ShipperId:  userInfo.ShipperID,
-					BranchId:   order.Steps[0].BranchId.GetValue(),
-					Amount:     int64(order.DeliveryPrice + order.OrderAmount),
-					ParamValue: res.BillId,
-					ParamName:  "uid",
-				})
-			if err != nil {
-				h.log.Error("Error while generating payme link", logger.Error(err))
-				return "", err
-			}
-
-			link = resPayme.Link
-		} else {
-			resClick, err := h.grpcClient.PaymentService().GenerateClickLink(
-				context.Background(),
-				&pbp.GenerateClickLinkRequest{
-					ShipperId: userInfo.ShipperID,
-					BranchId:  order.Steps[0].BranchId.GetValue(),
-					Amount:    int64(order.DeliveryPrice + order.OrderAmount),
-					Value:     res.BillId,
-				})
-			if err != nil {
-				h.log.Error("Error while generating click link", logger.Error(err))
-				return "", err
-			}
-
-			link = resClick.Link
-		}
-	} else if model.PaymentType == "payme" {
-		resPayme, err := h.grpcClient.PaymentService().GeneratePaymeLink(
-			context.Background(),
-			&pbp.GeneratePaymeLinkRequest{
-				ShipperId:  userInfo.ShipperID,
-				Amount:     int64(order.OrderAmount + order.CoDeliveryPrice),
-				ParamName:  "order_num",
-				ParamValue: orderNum,
-				BranchId:   order.Steps[0].BranchId.GetValue(),
-			},
-		)
-		if err != nil {
-			h.log.Error("Error while generating payme link", logger.Error(err))
-			return "", err
-		}
-
-		link = resPayme.Link
-	} else {
-		resClick, err := h.grpcClient.PaymentService().GenerateClickLink(
-			context.Background(),
-			&pbp.GenerateClickLinkRequest{
-				ShipperId: userInfo.ShipperID,
-				BranchId:  order.Steps[0].BranchId.GetValue(),
-				Amount:    int64(order.OrderAmount + order.CoDeliveryPrice),
-				Value:     orderNum,
-			})
-		if err != nil {
-			h.log.Error("Error while generating click link", logger.Error(err))
-			return "", err
-		}
-
-		link = resClick.Link
-	}
-
-	return link, nil
 }

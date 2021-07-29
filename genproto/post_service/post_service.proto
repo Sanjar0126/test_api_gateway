@@ -1,0 +1,34 @@
+syntax = "proto3";
+
+package genproto;
+
+option go_package="genproto/post_service";
+
+import "post.proto";
+import "google/protobuf/empty.proto";
+
+service PostService {
+    rpc Create(Post) returns (PostId) {}
+    rpc Get(PostId) returns (Post) {}
+    rpc GetAll(GetAllPostsRequest) returns (GetAllPostsResponse) {}
+    rpc Update(Post) returns (google.protobuf.Empty) {}
+    rpc Delete(DeletePostRequest) returns (google.protobuf.Empty) {}
+}
+
+message PostId {
+    string id = 1;
+}
+
+message GetAllPostsRequest {
+    uint64 page = 1;
+    uint64 limit = 2;
+}
+
+message GetAllPostsResponse {
+    repeated Post posts = 1;
+    uint64 count = 2;
+}
+
+message DeletePostRequest {
+    string id = 1;
+}
