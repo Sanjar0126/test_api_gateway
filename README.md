@@ -1,1 +1,1 @@
-Delever Customer Api Gateway
+Api Gateway
